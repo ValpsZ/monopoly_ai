@@ -1,5 +1,3 @@
-use std::f32::consts::E;
-
 use crate::monopoly::Player;
 
 // TODO: Make cards triger the spot they land on.
@@ -123,4 +121,108 @@ pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
         player.money += 150;
     },
 ];
-pub const COMMUNITY_CARDS: Vec<&'_ dyn Fn(Player)> = vec![];
+
+pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 18] = [
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.position = 0;
+        player.money += 200;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 200;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money -= 50;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 50;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.is_in_jail = false;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.position = 10;
+        player.is_in_jail = true;
+    },
+    |players, user_idx| {
+        let gain = (players.len() as i32 - 1) * 50;
+        let player = &mut players[user_idx];
+        player.money += gain;
+        for idx in 0..players.len() {
+            if idx != user_idx {
+                players[idx].money -= 50;
+            }
+        }
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 100;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 50;
+    },
+    |players, user_idx| {
+        let gain = (players.len() as i32 - 1) * 10;
+        let player = &mut players[user_idx];
+        player.money += gain;
+        for idx in 0..players.len() {
+            if idx != user_idx {
+                players[idx].money -= 10;
+            }
+        }
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        let mut cost = 0;
+        for idx in 0..player.propeties.len() {
+            if player.propeties[idx].houses == 4 {
+                cost += 100;
+            } else {
+                cost += 25 * player.propeties[idx].houses;
+            }
+        }
+        player.money -= cost;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 100;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money -= 50;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money -= 50;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 25;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        let mut cost = 0;
+        for idx in 0..player.propeties.len() {
+            if player.propeties[idx].houses == 4 {
+                cost += 115;
+            } else {
+                cost += 40 * player.propeties[idx].houses;
+            }
+        }
+        player.money -= cost;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 10;
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.money += 100;
+    },
+];
