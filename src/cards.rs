@@ -73,56 +73,51 @@ pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
                 cost += 25 * player.propeties[idx].houses;
             }
         }
-        player.money -= cost;
+        player.pay(cost);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        if player.position > 5 {
-            player.money += 200;
-        }
-        player.position = 5;
+        player.move_to(5, true);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money -= 15;
+        player.pay(15);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.position = 39;
+        player.move_to(39, false);
     },
     |players, user_idx| {
         let cost = (players.len() as i32 - 1) * 50;
+        let payed = players[user_idx].pay(cost);
+        let mut reward = 50;
+        if payed != cost {
+            let reward = payed / (players.len() - 1) as i32;
+        }
         for idx in 0..players.len() {
             if idx != user_idx {
-                players[idx].money += 50;
-            } else {
-                players[idx].money -= cost;
+                players[idx].collect(reward);
             }
         }
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 150;
+        player.collect(150);
     },
 ];
 
-pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 18] = [
+pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.position = 0;
-        player.money += 200;
+        player.collect(100);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 200;
+        player.collect(50);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money -= 50;
-    },
-    |players, user_idx| {
-        let player = &mut players[user_idx];
-        player.money += 50;
+        player.pay(50);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
@@ -130,64 +125,46 @@ pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 18] = [
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.position = 10;
+        let mut gain = 0;
+        for idx in 0..players.len() {
+            if idx != user_idx {
+                gain += players[idx].pay(10);
+            }
+        }
+        player.collect(gain);
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
+        player.move_to(10, false);
         player.is_in_jail = true;
     },
     |players, user_idx| {
-        let gain = (players.len() as i32 - 1) * 50;
         let player = &mut players[user_idx];
-        player.money += gain;
-        for idx in 0..players.len() {
-            if idx != user_idx {
-                players[idx].money -= 50;
-            }
-        }
+        player.collect(20);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 100;
+        player.collect(100);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 50;
-    },
-    |players, user_idx| {
-        let gain = (players.len() as i32 - 1) * 10;
-        let player = &mut players[user_idx];
-        player.money += gain;
-        for idx in 0..players.len() {
-            if idx != user_idx {
-                players[idx].money -= 10;
-            }
-        }
+        player.collect(100);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        let mut cost = 0;
-        for idx in 0..player.propeties.len() {
-            if player.propeties[idx].houses == 4 {
-                cost += 100;
-            } else {
-                cost += 25 * player.propeties[idx].houses;
-            }
-        }
-        player.money -= cost;
+        player.pay(100);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 100;
+        player.move_to(0, true);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money -= 50;
+        player.collect(200);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money -= 50;
-    },
-    |players, user_idx| {
-        let player = &mut players[user_idx];
-        player.money += 25;
+        player.collect(50);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
@@ -199,14 +176,10 @@ pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 18] = [
                 cost += 40 * player.propeties[idx].houses;
             }
         }
-        player.money -= cost;
+        player.pay(cost);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 10;
-    },
-    |players, user_idx| {
-        let player = &mut players[user_idx];
-        player.money += 100;
+        player.collect(25);
     },
 ];
