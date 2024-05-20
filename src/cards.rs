@@ -1,70 +1,54 @@
 use crate::monopoly::Player;
 
-// TODO: Make cards triger the spot they land on.
+// TODO: Make cards trigger the spot they land on.
 pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.position = 0;
-        player.money += 200;
+        player.move_to(0, true);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        if player.position > 24 {
-            player.money += 200;
-        }
-        player.position = 24;
+        player.move_to(24, true);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        if player.position > 11 {
-            player.money += 200;
-        }
-        player.position = 11;
+        player.move_to(11, true);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
         if player.position > 12 && player.position < 28 {
-            player.position = 28;
+            player.move_to(28, true);
         } else {
-            if player.position > 28 {
-                player.money += 200;
-            }
-            player.position = 12;
+            player.move_to(12, true);
         }
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
         if player.position < 5 || player.position > 35 {
-            if player.position > 35 {
-                player.money += 200;
-            }
-            player.position = 5;
+            player.move_to(5, true);
         } else if player.position > 5 && player.position < 15 {
-            player.position = 15;
+            player.move_to(15, false);
         } else if player.position > 15 && player.position < 25 {
-            player.position = 25;
+            player.move_to(25, false);
         } else {
-            player.position = 35;
+            player.move_to(35, false);
         }
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
         if player.position < 5 || player.position > 35 {
-            if player.position > 35 {
-                player.money += 200;
-            }
-            player.position = 5;
+            player.move_to(5, true);
         } else if player.position > 5 && player.position < 15 {
-            player.position = 15;
+            player.move_to(15, false);
         } else if player.position > 15 && player.position < 25 {
-            player.position = 25;
+            player.move_to(25, false);
         } else {
-            player.position = 35;
+            player.move_to(35, false);
         }
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.money += 50;
+        player.collect(50);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
@@ -72,11 +56,11 @@ pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.position -= 3;
+        player.move_to(player.position - 3, false);
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.position = 10;
+        player.move_to(10, false);
         player.is_in_jail = true;
     },
     |players, user_idx| {
