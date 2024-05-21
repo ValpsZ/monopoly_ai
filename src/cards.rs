@@ -92,7 +92,7 @@ pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
         let payed = players[user_idx].pay(cost);
         let mut reward = 50;
         if payed != cost {
-            let reward = payed / (players.len() - 1) as i32;
+            reward = payed / (players.len() - 1) as i32;
         }
         for idx in 0..players.len() {
             if idx != user_idx {
@@ -117,6 +117,10 @@ pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
+        player.collect(10);
+    },
+    |players, user_idx| {
+        let player = &mut players[user_idx];
         player.pay(50);
     },
     |players, user_idx| {
@@ -124,13 +128,13 @@ pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
         player.is_in_jail = false;
     },
     |players, user_idx| {
-        let player = &mut players[user_idx];
         let mut gain = 0;
         for idx in 0..players.len() {
             if idx != user_idx {
                 gain += players[idx].pay(10);
             }
         }
+        let player = &mut players[user_idx];
         player.collect(gain);
     },
     |players, user_idx| {
