@@ -1,3 +1,5 @@
+use rand::Rng;
+
 pub enum MonopolyErrors {
     MortgageWithHouseError,
     InsufficientHousesError,
@@ -45,7 +47,7 @@ pub struct Community<'g> {
 
 impl Player<'_> {
     pub fn move_to(&mut self, position: i32, collect_go: bool) {
-        if collect_go && (self.position < position || position == 0) {
+        if collect_go && (self.position > position || position == 0) {
             self.collect(200);
         }
         self.position = position;
@@ -107,5 +109,23 @@ impl Property {
         }
         self.houses -= amount;
         return Ok((self.house_price / 2) * amount);
+    }
+}
+
+impl Game<'_> {
+    pub fn turn(&mut self, user_idx: usize, doubles: i32) {
+        let mut rng = rand::thread_rng();
+        let dice1: i32 = rng.gen_range(0..=6);
+        let dice2: i32 = rng.gen_range(0..=6);
+        if dice1 == dice2 && doubles == 2 {
+            self.players[user_idx].move_to(10, false);
+            self.players[user_idx].is_in_jail = true;
+            return;
+        }
+        let new_position = (self.players[user_idx].position + dice1 + dice2) % 40;
+        self.players[user_idx].move_to(new_position, true);
+        if dice1 == dice2 {
+            self.turn(user_idx, doubles + 1)
+        }
     }
 }
