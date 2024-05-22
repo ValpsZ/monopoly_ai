@@ -1,7 +1,6 @@
 use crate::monopoly::Player;
 
-// TODO: Make cards trigger the spot they land on.
-pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
+pub const CHANCE_FN: [fn(&mut Vec<Player>, usize); 16] = [
     |players, user_idx| {
         let player = &mut players[user_idx];
         player.move_to(0, true);
@@ -52,7 +51,7 @@ pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.is_in_jail = false;
+        player.chance_jail = true;
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
@@ -106,7 +105,7 @@ pub const CHANCE_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     },
 ];
 
-pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
+pub const COMMUNITY_FN: [fn(&mut Vec<Player>, usize); 16] = [
     |players, user_idx| {
         let player = &mut players[user_idx];
         player.collect(100);
@@ -125,7 +124,7 @@ pub const COMMUNITY_CARDS: [fn(&mut Vec<Player>, usize); 16] = [
     },
     |players, user_idx| {
         let player = &mut players[user_idx];
-        player.is_in_jail = false;
+        player.community_jail = true;
     },
     |players, user_idx| {
         let mut gain = 0;
