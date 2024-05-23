@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use rand::Rng;
 
 use crate::cards;
@@ -6,6 +7,7 @@ pub enum MonopolyErrors {
     MortgageWithHouseError,
     InsufficientHousesError,
 }
+
 pub enum PropertyType {
     Street,
     Rail,
@@ -91,8 +93,8 @@ impl Player {
 
     fn sell_everything(&mut self) {
         for property in &mut self.propeties {
-            property.sell_houses(property.houses);
-            property.mortgage();
+            let _ = property.sell_houses(property.houses);
+            let _ = property.mortgage();
         }
     }
 }
@@ -114,10 +116,10 @@ impl Property {
         return Ok((self.house_price / 2) * amount);
     }
 
-    pub fn get_rent(&self, user_idx: usize, dice_roll: i32) -> i32 {
+    pub fn get_rent(&self, user_id: usize, dice_roll: i32) -> i32 {
         match self.owner_id {
             Some(id) => {
-                if id == user_idx {
+                if id == user_id {
                     return 0;
                 }
 
@@ -133,111 +135,109 @@ impl Property {
 }
 
 impl Game<'_> {
-    pub fn turn(&mut self, user_idx: usize, doubles: i32) {
+    pub fn turn(&mut self, user_id: usize, doubles: i32) {
         let mut rng = rand::thread_rng();
         let dice1: i32 = rng.gen_range(0..=6);
         let dice2: i32 = rng.gen_range(0..=6);
         if dice1 == dice2 && doubles == 2 {
-            self.players[user_idx].move_to(10, false);
-            self.players[user_idx].is_in_jail = true;
+            self.players[user_id].move_to(10, false);
+            self.players[user_id].is_in_jail = true;
             return;
         }
-        let new_position = (self.players[user_idx].position + dice1 + dice2) % 40;
-        self.players[user_idx].move_to(new_position, true);
-        self.handle_player_move(user_idx, dice1 + dice2);
+        let new_position = (self.players[user_id].position + dice1 + dice2) % 40;
+        self.players[user_id].move_to(new_position, true);
+        self.handle_player_move(user_id, dice1 + dice2);
         if dice1 == dice2 {
-            self.turn(user_idx, doubles + 1)
+            self.turn(user_id, doubles + 1)
         }
     }
 
-    pub fn handle_player_move(&mut self, user_idx: usize, dice_roll: i32) {
-        let mut property_idx: Option<usize> = None;
-        for property_loop_idx in 0..self.properties.len() {
-            if self.properties[property_loop_idx].position == self.players[user_idx].position {
-                property_idx = Some(property_loop_idx);
+    pub fn handle_player_move(&mut self, user_id: usize, dice_roll: i32) {
+        let mut property_id: Option<usize> = None;
+        for property_loop_id in 0..self.properties.len() {
+            if self.properties[property_loop_id].position == self.players[user_id].position {
+                property_id = Some(property_loop_id);
                 break;
             }
         }
-        match property_idx {
-            Some(idx) => match idx {
+        match property_id {
+            Some(id) => match id {
                 2 | 17 | 33 => {
-                    self.draw_community(user_idx);
+                    self.draw_community(user_id);
                 }
                 7 | 22 | 36 => {
-                    self.draw_chance(user_idx);
+                    self.draw_chance(user_id);
                 }
                 4 => {
-                    self.players[user_idx].pay(200);
+                    self.players[user_id].pay(200);
                 }
                 38 => {
-                    self.players[user_idx].pay(100);
+                    self.players[user_id].pay(100);
                 }
                 30 => {
-                    self.players[user_idx].move_to(10, false);
+                    self.players[user_id].move_to(10, false);
                 }
                 0 | 10 | 20 => {}
                 _ => {
-                    let rent = self.properties[idx].get_rent(user_idx, dice_roll);
-                    self.players[user_idx].pay(rent);
+                    let rent = self.properties[id].get_rent(user_id, dice_roll);
+                    self.players[user_id].pay(rent);
                 }
             },
             _ => {}
         }
     }
 
-    pub fn draw_community(&mut self, user_idx: usize) {
+    pub fn draw_community(&mut self, user_id: usize) {
         match self.community_cards.pop() {
             Some(card) => {
-                card.execute_action(&mut self.players, user_idx);
+                card.execute_action(&mut self.players, user_id);
             }
             None => {
                 self.shuffle_community();
-                self.draw_community(user_idx);
+                self.draw_community(user_id);
             }
         };
     }
 
-    pub fn draw_chance(&mut self, user_idx: usize) {
+    pub fn draw_chance(&mut self, user_id: usize) {
         match self.chance_cards.pop() {
             Some(card) => {
-                card.execute_action(&mut self.players, user_idx);
+                card.execute_action(&mut self.players, user_id);
             }
             None => {
                 self.shuffle_chance();
-                self.draw_chance(user_idx);
+                self.draw_chance(user_id);
             }
         };
     }
 
     pub fn shuffle_community(&mut self) {
-        for idx in 0..cards::COMMUNITY_FN.len() {
-            if idx == 5 {
+        for id in 0..cards::COMMUNITY_FN.len() {
+            if id == 5 {
                 if self.players.iter().any(|player| player.chance_jail) {
                     continue;
                 }
-                let action = &cards::COMMUNITY_FN[idx];
-                self.community_cards
-                    .push(Card::new(idx, true, action))
+                let action = &cards::COMMUNITY_FN[id];
+                self.community_cards.push(Card::new(id, true, action))
             } else {
-                let action = &cards::COMMUNITY_FN[idx];
-                self.community_cards
-                    .push(Card::new(idx, false, action))
+                let action = &cards::COMMUNITY_FN[id];
+                self.community_cards.push(Card::new(id, false, action))
             }
         }
     }
 
     pub fn shuffle_chance(&mut self) {
-        for idx in 0..cards::CHANCE_FN.len() {
-            if idx == 8 {
+        for id in 0..cards::CHANCE_FN.len() {
+            if id == 8 {
                 if self.players.iter().any(|player| player.chance_jail) {
                     continue;
                 }
 
-                let action = &cards::CHANCE_FN[idx];
-                self.chance_cards.push(Card::new(idx, true, action))
+                let action = &cards::CHANCE_FN[id];
+                self.chance_cards.push(Card::new(id, true, action))
             } else {
-                let action = &cards::COMMUNITY_FN[idx];
-                self.chance_cards.push(Card::new(idx, false, action))
+                let action = &cards::COMMUNITY_FN[id];
+                self.chance_cards.push(Card::new(id, false, action))
             }
         }
     }
@@ -252,7 +252,7 @@ impl<'g> Card<'g> {
         }
     }
 
-    pub fn execute_action(&self, players: &mut Vec<Player>, user_idx: usize) {
-        (self.action)(players, user_idx);
+    pub fn execute_action(&self, players: &mut Vec<Player>, user_id: usize) {
+        (self.action)(players, user_id);
     }
 }
