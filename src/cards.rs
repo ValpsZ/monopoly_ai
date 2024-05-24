@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::monopoly::Player;
+use crate::monopoly::{Player, PropertyColor};
 
 pub const CHANCE_FN: [fn(&mut Vec<Player>, usize); 16] = [
     |players, user_id| {
@@ -67,10 +67,16 @@ pub const CHANCE_FN: [fn(&mut Vec<Player>, usize); 16] = [
         let player = &mut players[user_id];
         let mut cost = 0;
         for id in 0..player.propeties.len() {
+            if player.propeties[id].color == PropertyColor::Util
+                || player.propeties[id].color == PropertyColor::Rail
+            {
+                continue;
+            }
+
             if player.propeties[id].houses == 4 {
                 cost += 100;
             } else {
-                cost += 25 * player.propeties[id].houses;
+                cost += 25 * player.propeties[id].houses as i32;
             }
         }
         player.pay(cost);
@@ -174,10 +180,16 @@ pub const COMMUNITY_FN: [fn(&mut Vec<Player>, usize); 16] = [
         let player = &mut players[user_id];
         let mut cost = 0;
         for id in 0..player.propeties.len() {
+            if player.propeties[id].color == PropertyColor::Util
+                || player.propeties[id].color == PropertyColor::Rail
+            {
+                continue;
+            }
+
             if player.propeties[id].houses == 4 {
                 cost += 115;
             } else {
-                cost += 40 * player.propeties[id].houses;
+                cost += 40 * player.propeties[id].houses as i32;
             }
         }
         player.pay(cost);

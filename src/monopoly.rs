@@ -1,17 +1,25 @@
 #![allow(dead_code)]
 use rand::Rng;
 
-use crate::cards;
+use crate::{cards, property_consts};
 
 pub enum MonopolyErrors {
     MortgageWithHouseError,
     InsufficientHousesError,
 }
 
-pub enum PropertyType {
-    Street,
-    Rail,
+#[derive(PartialEq, Clone)]
+pub enum PropertyColor {
+    Brown,
+    LBlue,
+    Pink,
+    Orange,
+    Red,
+    Yellow,
+    Green,
+    Blue,
     Util,
+    Rail,
 }
 
 pub struct Game<'g> {
@@ -22,7 +30,7 @@ pub struct Game<'g> {
 }
 
 pub struct Player {
-    pub id: i32,
+    pub id: usize,
     pub position: i32,
     pub is_in_jail: bool,
     pub money: i32,
@@ -33,12 +41,12 @@ pub struct Player {
 }
 
 pub struct Property {
-    id: i32,
+    id: usize,
     price: i32,
     pub position: i32,
-    pub prop_type: PropertyType,
-    pub houses: i32,
-    rent: i32,
+    pub houses: usize,
+    pub color: PropertyColor,
+    rent: Vec<i32>,
     owner_id: Option<usize>,
     pub house_price: i32,
     mortgaged: bool,
@@ -51,10 +59,24 @@ pub struct Card<'g> {
 }
 
 impl Player {
+    pub fn new(id: usize) -> Self {
+        Player {
+            id,
+            position: 0,
+            is_in_jail: false,
+            money: 1500,
+            propeties: vec![],
+            chance_jail: false,
+            community_jail: false,
+            bankrupt: false,
+        }
+    }
+
     pub fn move_to(&mut self, position: i32, collect_go: bool) {
         if collect_go && (self.position > position || position == 0) {
             self.collect(200);
         }
+
         self.position = position;
     }
 
@@ -67,6 +89,7 @@ impl Player {
             self.money -= cost;
             return cost;
         }
+
         let networth = self.calculate_networth();
         if networth < cost {
             self.bankrupt = true;
@@ -85,7 +108,9 @@ impl Player {
         sum += self
             .propeties
             .iter()
-            .map(|property| (property.house_price / 2) * property.houses + (property.price / 2))
+            .map(|property| {
+                (property.house_price / 2) * property.houses as i32 + (property.price / 2)
+            })
             .sum::<i32>();
 
         return sum;
@@ -100,32 +125,60 @@ impl Player {
 }
 
 impl Property {
+    pub fn init_properties() -> Vec<Property> {
+        let mut properties = Vec::with_capacity(property_consts::PROPERTY_PRICES.len());
+
+        for id in 0..properties.len() {
+            properties.push(Property {
+                id,
+                price: property_consts::PROPERTY_PRICES[id],
+                position: property_consts::PROPERTY_POSITIONS[id],
+                houses: 0,
+                color: property_consts::PROPERTY_COLORS[id].clone(),
+                rent: property_consts::PROPERTY_RENTS[id].to_vec(),
+                mortgaged: false,
+                owner_id: None,
+                house_price: property_consts::PROPERTY_HOUSES[id],
+            });
+        }
+        return properties;
+    }
+
     pub fn mortgage(&mut self) -> Result<i32, MonopolyErrors> {
         if self.houses > 0 && self.house_price != 0 {
             return Err(MonopolyErrors::MortgageWithHouseError);
         }
+
         self.mortgaged = true;
         return Ok(self.price / 2);
     }
 
-    pub fn sell_houses(&mut self, amount: i32) -> Result<i32, MonopolyErrors> {
+    pub fn sell_houses(&mut self, amount: usize) -> Result<i32, MonopolyErrors> {
         if self.houses < amount || self.house_price == 0 {
             return Err(MonopolyErrors::InsufficientHousesError);
         }
+
         self.houses -= amount;
-        return Ok((self.house_price / 2) * amount);
+        return Ok((self.house_price / 2) * amount as i32);
     }
 
-    pub fn get_rent(&self, user_id: usize, dice_roll: i32) -> i32 {
+    pub fn get_rent(&self, user_id: usize, dice_roll: i32, color_owned: bool) -> i32 {
         match self.owner_id {
             Some(id) => {
                 if id == user_id {
                     return 0;
                 }
 
-                match self.prop_type {
-                    PropertyType::Street | PropertyType::Rail => return self.rent,
-                    PropertyType::Util => return self.rent * dice_roll,
+                match self.color {
+                    PropertyColor::Util => return self.rent[self.houses] * dice_roll,
+                    PropertyColor::Rail => return self.rent[self.houses],
+                    _ => {
+                        if self.houses == 0 && color_owned {
+                            return self.rent[self.houses] * 2;
+                        } else {
+                            return self.rent[self.houses];
+                        }
+                    }
                 }
             }
             _ => (),
@@ -135,18 +188,34 @@ impl Property {
 }
 
 impl Game<'_> {
+    pub fn new(player_amount: usize) -> Self {
+        let mut game = Game {
+            players: (0..player_amount).map(Player::new).collect(),
+            properties: Property::init_properties(),
+            chance_cards: vec![],
+            community_cards: vec![],
+        };
+
+        game.shuffle_chance();
+        game.shuffle_community();
+        return game;
+    }
+
     pub fn turn(&mut self, user_id: usize, doubles: i32) {
         let mut rng = rand::thread_rng();
         let dice1: i32 = rng.gen_range(0..=6);
         let dice2: i32 = rng.gen_range(0..=6);
+
         if dice1 == dice2 && doubles == 2 {
             self.players[user_id].move_to(10, false);
             self.players[user_id].is_in_jail = true;
             return;
         }
+
         let new_position = (self.players[user_id].position + dice1 + dice2) % 40;
         self.players[user_id].move_to(new_position, true);
         self.handle_player_move(user_id, dice1 + dice2);
+
         if dice1 == dice2 {
             self.turn(user_id, doubles + 1)
         }
@@ -160,6 +229,7 @@ impl Game<'_> {
                 break;
             }
         }
+
         match property_id {
             Some(id) => match id {
                 2 | 17 | 33 => {
@@ -179,8 +249,35 @@ impl Game<'_> {
                 }
                 0 | 10 | 20 => {}
                 _ => {
-                    let rent = self.properties[id].get_rent(user_id, dice_roll);
-                    self.players[user_id].pay(rent);
+                    let prop_color = &self.properties[id].color;
+                    let mut owned_amount = 0;
+                    for property in &self.properties {
+                        if property.color != *prop_color {
+                            continue;
+                        }
+                        owned_amount += 1;
+                    }
+
+                    let color_id = match prop_color {
+                        PropertyColor::Brown => 0,
+                        PropertyColor::LBlue => 1,
+                        PropertyColor::Pink => 2,
+                        PropertyColor::Orange => 3,
+                        PropertyColor::Red => 4,
+                        PropertyColor::Yellow => 5,
+                        PropertyColor::Green => 6,
+                        PropertyColor::Blue => 7,
+                        PropertyColor::Util => 8,
+                        PropertyColor::Rail => 9,
+                    };
+
+                    if property_consts::PROPERTY_AMOUNTS[color_id] == owned_amount {
+                        let rent = self.properties[id].get_rent(user_id, dice_roll, true);
+                        self.players[user_id].pay(rent);
+                    } else {
+                        let rent = self.properties[id].get_rent(user_id, dice_roll, false);
+                        self.players[user_id].pay(rent);
+                    }
                 }
             },
             _ => {}
@@ -217,6 +314,7 @@ impl Game<'_> {
                 if self.players.iter().any(|player| player.chance_jail) {
                     continue;
                 }
+
                 let action = &cards::COMMUNITY_FN[id];
                 self.community_cards.push(Card::new(id, true, action))
             } else {

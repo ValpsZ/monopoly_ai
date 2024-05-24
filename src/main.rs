@@ -1,6 +1,7 @@
 use simple_genetic::simple_genetic::{activations, agent::create_agents, fitness};
 mod cards;
 mod monopoly;
+mod property_consts;
 use monopoly::Game;
 
 fn main() {
